@@ -10,8 +10,19 @@ import (
 	"strings"
 )
 
+func isValidCommand(command string) bool {
+	switch command {
+	case
+		"start",
+		"init":
+		return true
+	}
+
+	return false
+}
+
 func main() {
-	if (len(os.Args) < 1) || (os.Args[1] != "init") || (os.Args[1] != "start") {
+	if (len(os.Args) < 2) || !isValidCommand(os.Args[1]) {
 		fmt.Printf(`
 Changes ports of IPFS configurations so they don't overlap. Prints out a list of Peer IDs.
 Available commands:
@@ -25,9 +36,31 @@ Usage:
 		os.Exit(1)
 	}
 
-	n, err := strconv.Atoi(os.Args[1])
+	n, err := strconv.Atoi(os.Args[2])
 	check(err)
 
+	switch os.Args[1] {
+	case "init":
+		initSybilNodes(n)
+	case "start":
+		startSybilNodes(n)
+	}
+}
+
+// das klappt noch nicht ganz
+func startSybilNodes(n int) {
+	for i := 1; i <= n; i++ {
+		os.Setenv("IPFS_PATH", "~/.ipfsSybil"+strconv.Itoa(i))
+
+		cmd := exec.Command("ipfs", "daemon")
+		err := cmd.Start()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+}
+
+func initSybilNodes(n int) {
 	for i := 1; i <= n; i++ {
 		os.Setenv("IPFS_PATH", "~/.ipfsSybil"+strconv.Itoa(i))
 
@@ -93,4 +126,13 @@ func dirWindows() (string, error) {
 	}
 
 	return home, nil
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
