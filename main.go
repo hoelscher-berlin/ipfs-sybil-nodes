@@ -1,28 +1,51 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 )
 
 func main() {
-	if len(os.Args) < 1 {
+	if (len(os.Args) < 1) || (os.Args[1] != "init") || (os.Args[1] != "start") {
 		fmt.Printf(`
 Changes ports of IPFS configurations so they don't overlap. Prints out a list of Peer IDs.
+Available commands:
+
+	init - initializes {number of sybil nodes} sybil nodes
+	start - starts {number of sybil nodes} daemons
 
 Usage:
-	%s {number of sybil nodes}
+	%s {cmd} {number of sybil nodes}
 `, os.Args[0])
+		os.Exit(1)
 	}
 
 	n, err := strconv.Atoi(os.Args[1])
 	check(err)
 
 	for i := 1; i <= n; i++ {
-		file, err := ioutil.ReadFile(".ipfs" + strconv.Itoa(i) + "/config")
+		os.Setenv("IPFS_PATH", "~/.ipfsSybil"+strconv.Itoa(i))
+
+		out, _ := exec.Command("ipfs", "init").Output()
+
+		fmt.Printf("Initialising node %d...\n", i)
+
+		fmt.Printf("%s", out)
+
+		home, err := dirWindows()
+
+		if err != nil {
+			fmt.Printf("Can't find home directory of current user: %s\n", err)
+		}
+
+		configPath := home + "/.ipfsSybil" + strconv.Itoa(i) + "/config"
+
+		file, err := ioutil.ReadFile(configPath)
 		check(err)
 
 		lines := strings.Split(string(file), "\n")
@@ -40,8 +63,10 @@ Usage:
 
 		output := strings.Join(lines, "\n")
 
-		err = ioutil.WriteFile(".ipfs"+strconv.Itoa(i)+"/config", []byte(output), 0644)
+		err = ioutil.WriteFile(configPath, []byte(output), 0644)
 		check(err)
+
+		fmt.Printf("Successfully initialised node %d and changed config.\n", i)
 	}
 }
 
@@ -49,4 +74,23 @@ func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+func dirWindows() (string, error) {
+	// First prefer the HOME environmental variable
+	if home := os.Getenv("HOME"); home != "" {
+		return home, nil
+	}
+
+	drive := os.Getenv("HOMEDRIVE")
+	path := os.Getenv("HOMEPATH")
+	home := drive + path
+	if drive == "" || path == "" {
+		home = os.Getenv("USERPROFILE")
+	}
+	if home == "" {
+		return "", errors.New("HOMEDRIVE, HOMEPATH, and USERPROFILE are blank")
+	}
+
+	return home, nil
 }
