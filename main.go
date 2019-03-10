@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-var (
-	n = 20
-)
-
 func main() {
 	if len(os.Args) < 1 {
 		fmt.Printf(`
