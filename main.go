@@ -52,7 +52,7 @@ func startSybilNodes(n int) {
 	for i := 1; i <= n; i++ {
 		os.Setenv("IPFS_PATH", "~/.ipfsSybil"+strconv.Itoa(i))
 
-		cmd := exec.Command("ipfs", "daemon")
+		cmd := exec.Command("sybil-ipfs", "daemon")
 		err := cmd.Start()
 		if err != nil {
 			fmt.Println(err)
@@ -61,10 +61,16 @@ func startSybilNodes(n int) {
 }
 
 func initSybilNodes(n int) {
+	ids := make([]string, n)
+
 	for i := 1; i <= n; i++ {
 		os.Setenv("IPFS_PATH", "~/.ipfsSybil"+strconv.Itoa(i))
 
-		out, _ := exec.Command("ipfs", "init").Output()
+		out, err := exec.Command("sybil-ipfs", "init").Output()
+
+		if err != nil {
+			fmt.Printf("Error executing command: %s\n", err)
+		}
 
 		fmt.Printf("Initialising node %d...\n", i)
 
@@ -76,7 +82,7 @@ func initSybilNodes(n int) {
 			fmt.Printf("Can't find home directory of current user: %s\n", err)
 		}
 
-		configPath := home + "/.ipfsSybil" + strconv.Itoa(i) + "/config"
+		configPath := home + "\\.ipfsSybil" + strconv.Itoa(i) + "\\config"
 
 		file, err := ioutil.ReadFile(configPath)
 		check(err)
@@ -92,6 +98,10 @@ func initSybilNodes(n int) {
 			lines[j] = strings.Replace(lines[j], "/ip6/::/tcp/4001", "/ip6/::/tcp/"+number1, -1)
 			lines[j] = strings.Replace(lines[j], "/ip4/127.0.0.1/tcp/5001", "/ip4/127.0.0.1/tcp/"+number2, -1)
 			lines[j] = strings.Replace(lines[j], "/ip4/127.0.0.1/tcp/8080", "/ip4/127.0.0.1/tcp/"+number3, -1)
+
+			if strings.Contains(line, "PeerID") {
+				ids[i-1] = strings.Split(line, `"`)[3]
+			}
 		}
 
 		output := strings.Join(lines, "\n")
@@ -100,6 +110,10 @@ func initSybilNodes(n int) {
 		check(err)
 
 		fmt.Printf("Successfully initialised node %d and changed config.\n", i)
+	}
+
+	for i := 0; i < n; i++ {
+		fmt.Println(ids[i])
 	}
 }
 

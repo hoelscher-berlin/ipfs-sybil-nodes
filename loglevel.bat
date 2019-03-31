@@ -1,4 +1,4 @@
-FOR /L %%A IN (1,1,10) DO (
+FOR /L %%A IN (1,1,50) DO (
   set IPFS_PATH=~/.ipfsSybil%%A
-  START cmd /K ipfs log level dht info
+  START cmd /K sybil-ipfs log level dht info
 )
