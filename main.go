@@ -30,18 +30,24 @@ Available commands:
 	init - initializes {number of sybil nodes} sybil nodes
 	start - starts {number of sybil nodes} daemons
 
+Types:
+	
+	sybil - normal sybil nodes
+	ddos - ddos nodes
+
 Usage:
-	%s {cmd} {number of sybil nodes}
+	%s {cmd} {type} {number of sybil nodes}
 `, os.Args[0])
 		os.Exit(1)
 	}
 
-	n, err := strconv.Atoi(os.Args[2])
+	attackType := os.Args[2]
+	n, err := strconv.Atoi(os.Args[3])
 	check(err)
 
 	switch os.Args[1] {
 	case "init":
-		initSybilNodes(n)
+		initSybilNodes(n, attackType)
 	case "start":
 		startSybilNodes(n)
 	}
@@ -60,13 +66,13 @@ func startSybilNodes(n int) {
 	}
 }
 
-func initSybilNodes(n int) {
+func initSybilNodes(n int, attackType string) {
 	ids := make([]string, n)
 
 	for i := 1; i <= n; i++ {
-		os.Setenv("IPFS_PATH", "~/.ipfsSybil"+strconv.Itoa(i))
+		os.Setenv("IPFS_PATH", "~/.ipfs"+attackType+strconv.Itoa(i))
 
-		out, err := exec.Command("sybil-ipfs", "init").Output()
+		out, err := exec.Command(attackType+"-ipfs", "init").Output()
 
 		if err != nil {
 			fmt.Printf("Error executing command: %s\n", err)
@@ -82,7 +88,7 @@ func initSybilNodes(n int) {
 			fmt.Printf("Can't find home directory of current user: %s\n", err)
 		}
 
-		configPath := home + "\\.ipfsSybil" + strconv.Itoa(i) + "\\config"
+		configPath := home + "\\.ipfs" + attackType + strconv.Itoa(i) + "\\config"
 
 		file, err := ioutil.ReadFile(configPath)
 		check(err)
